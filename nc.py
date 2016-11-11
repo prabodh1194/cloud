@@ -26,11 +26,12 @@ def createStoragePool(conn):
 def createStoragePoolVolume(pool, name):
     stpVolXml = """
     <volume>
-        <name>"""+name+""".img</name>
+        <name>"""+name+""".qcow2</name>
         <allocation>0</allocation>
         <capacity unit="G">10</capacity>
         <target>
-            <path>/var/lib/libvirt/images/"""+name+""".img</path>
+            <format type='qcow2'/>
+            <path>/var/lib/libvirt/images/"""+name+""".qcow2</path>
             <permissions>
                 <owner>107</owner>
                 <group>107</group>
@@ -59,7 +60,7 @@ xml = "<?xml version='1.0'?>\
         <devices>\
         <disk type='file' device='disk'>\
         <driver name='qemu' type='qcow2'/>\
-        <source file='/var/lib/libvirt/images/centos71.img'/>\
+        <source file='/var/lib/libvirt/images/centos71.qcow2'/>\
         <backingStore/>\
         <target dev='vda' bus='virtio'/>\
         <alias name='virtio-disk0'/>\
