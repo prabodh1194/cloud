@@ -1,4 +1,4 @@
-import libvirt
+import libvirt, socket
 from xml.dom import minidom
 
 def getVolume(conn, domID):
@@ -97,6 +97,23 @@ def createVM(conn, pool, name, cpu, memory, size):
     domain.create()
     domain.setAutostart(1)
 
+def removeVM(conn, pool, domID):
+    domain = conn.lookupbyID(domID)
+    name = domain.name()
+    domain.destroy()
+    domain.undefine()
+    vol = pool.storageVolLookupByName(name+".qcow2")
+    vo.wipe(0)
+    vo.delete(0)
+
+def shutdownVM(conn, domID):
+    domain = conn.lookupbyID(domID)
+    domain.shutdown()
+
+def startVM(conn, domID):
+    domain = conn.lookupbyID(domID)
+    domain.create()
+
 def describeResources(conn,pool):
     resource = {}
     resource["capacity"] = pool.info()[1]
@@ -124,12 +141,37 @@ def describeResources(conn,pool):
     resource["capacity"] -= hdd
     resource["vcpu"] -= cpu
     resource["memory"] -= mem
-    return resource
+
+    res = ""
+
+    for r in resource:
+        res+=str(resource[r])+","
+    return res[:-1]
+
+HOST = ''                 # Symbolic name meaning all available interfaces
+PORT = 9000               # Arbitrary non-privileged port
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
 
 memory = "1073741824"
 cpu = "2"
 name = "centos71"
-conn=libvirt.open("qemu:///system")
-pool = conn.storagePoolLookupByName('images')
-createVM(conn, pool, name, cpu, memory, "10")
-print describeResources(conn, pool)
+connvm =libvirt.open("qemu:///system")
+pool = connvm.storagePoolLookupByName('images')
+createVM(connvm, pool, name, cpu, memory, "10")
+print describeResources(connvm, pool)
+
+while 1:
+    connsock, addr = s.accept()
+    data = connsock.recv(1024)
+    if data is None:
+        continue
+
+    instr = data.split(",")
+
+    if(instr[0] == "desc"):
+
+
+connsock.close()
+

@@ -10,4 +10,3 @@ for vol in vols:
     vo = pool.storageVolLookupByName(vol)
     vo.wipe(0)
     vo.delete(0)
-
