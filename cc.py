@@ -13,11 +13,13 @@ state = 0
 while 1:
     conn, addr = ccs.accept()
     data = conn.recv(1024)
+    print vm
 
     if not data:
         continue
 
     request = data.split(",")
+    print request
 
     if request[0] == "desc":
         if len(request) == 1:
@@ -63,8 +65,8 @@ while 1:
 
     elif request[0] == "remove":
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(vm[request[1]]), 9002))
-            s.send("remove,"+str(vm[request[0]]))
+            s.connect(("node"+str(vm[request[1]][1]), 9002))
+            s.send("remove,"+str(vm[request[1]][0]))
             success = int(s.recv(10))
             conn.send(str(vm[request[1]][0]))
 
@@ -75,16 +77,17 @@ while 1:
 
     elif request[0] == "shut":
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(vm[request[1]]), 9002))
-            s.send("shut,"+str(vm[request[0]]))
+            s.connect(("node"+str(vm[request[1]][1]), 9002))
+            s.send("shut,"+str(vm[request[1]][0]))
             success = int(s.recv(10))
+            print success
             conn.send(str(vm[request[1]][0]))
             s.close()
 
     elif request[0] == "resume":
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(vm[request[1]]), 9002))
-            s.send("resume,"+str(vm[request[0]]))
+            s.connect(("node"+str(vm[request[1]][1]), 9002))
+            s.send("shut,"+str(vm[request[1]][0]))
             success = int(s.recv(10))
             conn.send(str(vm[request[1]][0]))
             s.close()

@@ -10,7 +10,7 @@ def getVolume(conn, domID):
         nam = ""
         typ = ""
         fil = ""
-    
+
         if diskType.getAttribute('device') != 'disk':
             continue
         diskNodes = diskType.childNodes
@@ -91,7 +91,7 @@ def createVM(conn, pool, name, cpu, memory, size):
                 </devices>\
             </domain>\
             "
-    
+
     createStoragePoolVolume(pool,name,size)
     domain=conn.defineXML(xml)
     domain.create()
@@ -99,20 +99,21 @@ def createVM(conn, pool, name, cpu, memory, size):
     return domain.ID()
 
 def removeVM(conn, pool, domID):
-    domain = conn.lookupbyID(domID)
+    domain = conn.lookupByID(domID)
     name = domain.name()
     domain.destroy()
     domain.undefine()
     vol = pool.storageVolLookupByName(name+".qcow2")
-    vo.wipe(0)
-    vo.delete(0)
+    vol.wipe(0)
+    vol.delete(0)
 
 def shutdownVM(conn, domID):
-    domain = conn.lookupbyID(domID)
+    domain = conn.lookupByID(domID)
+    print domID, domain.name()
     domain.shutdown()
 
 def startVM(conn, domID):
-    domain = conn.lookupbyID(domID)
+    domain = conn.lookupByID(domID)
     domain.create()
 
 def describeResources(conn,pool):
@@ -178,18 +179,18 @@ while 1:
     elif instr[0] == "create":
         domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])
         connsock.send(str(domID))
-    elif instr[0] == "dest":
+    elif instr[0] == "remove":
         domID = int(instr[1])
         removeVM(connvm, pool, domID)
-        connsock.send("success")
+        connsock.send("1")
     elif instr[0] == "shut":
         domID = int(instr[1])
         shutdownVM(connvm, domID)
-        connsock.send("success")
+        connsock.send("1")
     elif instr[0] == "start":
         domID = int(instr[1])
         startVM(connvm, domID)
-        connsock.send("success")
+        connsock.send("1")
 
     connsock.close()
 

@@ -11,6 +11,7 @@ vm = {}
 while 1:
     conn, addr = clcs.accept()
     data = conn.recv(1024)
+    print vm
     if not data:
         continue
     if "favicon" in data:
@@ -52,7 +53,7 @@ while 1:
 
             vm[req[1]] += [[domID, req[2],'a']]
 
-            conn.send("succ")
+            conn.send(str(vm))
             s.close()
 
         elif req[0] == "remove":
@@ -64,7 +65,7 @@ while 1:
             for a in vm[int(req[1])]:
                 if a[0] == domID:
                     vm[int(req[1])].remove(a)
-            conn.send("succ")
+            conn.send(str(vm))
             s.close()
 
         elif req[0] == "shut":
@@ -76,7 +77,7 @@ while 1:
             for a in vm[int(req[1])]:
                 if a[0] == domID:
                     a[2] = 'i'
-            conn.send("succ")
+            conn.send(str(vm))
             s.close()
 
         elif req[0] == "resume":
@@ -88,7 +89,7 @@ while 1:
             for a in vm[int(req[1])]:
                 if a[0] == domID:
                     a[2] = 'a'
-            conn.send("succ")
+            conn.send(str(vm))
             s.close()
 
     conn.close()
