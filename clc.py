@@ -2,14 +2,14 @@ import socket
 
 HOST = ''
 PORT = 9000
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
+clcs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+clcs.bind((HOST, PORT))
+clcs.listen(1)
 
 vm = {}
 
 while 1:
-    conn, addr = s.accept()
+    conn, addr = clcs.accept()
     data = conn.recv(1024)
     if not data:
         continue
@@ -34,7 +34,7 @@ while 1:
             else:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(("node"+str(req[1]*2), 9001))
-                s.send("description,"+req[1]+(","+req[2] if len(req)==3 else ""))
+                s.send("desc,"+req[1]+(","+req[2] if len(req)==3 else ""))
                 conn.send(s.recv(1024))
                 s.close()
 
@@ -48,7 +48,7 @@ while 1:
             if req[1] not in vm:
                 vm[req[1]] = []
 
-            vm[req[1]] += [[domID, req[2]]]
+            vm[req[1]] += [[domID, req[2],'a']]
 
             s.close()
 
@@ -59,6 +59,28 @@ while 1:
             s.send("remove,"+req[2])
             domID = s.recv(1024)
             for a in vm[int(req[1])]:
-                
-         
+                if a[0] == domID:
+                    vm[int(req[1])].remove(a)
+
+        elif request[0] == "shut":
+            #/shut/zone/name
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+str(req[1]*2), 9001))
+            s.send("shut,"+req[2])
+            domID = s.recv(1024)
+            for a in vm[int(req[1])]:
+                if a[0] == domID:
+                    a[2] = 'i'
+
+        elif request[0] == "resume":
+            #/start/zone/name
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+str(req[1]*2), 9001))
+            s.send("start,"+req[2])
+            domID = s.recv(1024)
+            for a in vm[int(req[1])]:
+                if a[0] == domID:
+                    a[2] = 'a'
+
     conn.close()
+clcs.close()
