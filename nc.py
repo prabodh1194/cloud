@@ -160,7 +160,9 @@ cpu = "2"
 name = "centos71"
 connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
-createVM(connvm, pool, name, cpu, memory, "10")
+
+#createVM(connvm, pool, name, cpu, memory, "10")
+
 print describeResources(connvm, pool)
 
 while 1:
@@ -173,7 +175,7 @@ while 1:
 
     if instr[0] == "desc":
         connsock.send(describeResources(connvm, pool))
-    elif instr[0] == "creat":
+    elif instr[0] == "create":
         domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])
         connsock.send(str(domID))
     elif instr[0] == "dest":
@@ -192,3 +194,7 @@ while 1:
     connsock.close()
 
 connvm.close()
+
+def handler(signum, frame):
+    connvm.close()
+signal.signal(signal.SIGINT, handler)
