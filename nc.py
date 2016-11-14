@@ -96,6 +96,7 @@ def createVM(conn, pool, name, cpu, memory, size):
     domain=conn.defineXML(xml)
     domain.create()
     domain.setAutostart(1)
+    return domain.ID()
 
 def removeVM(conn, pool, domID):
     domain = conn.lookupbyID(domID)
@@ -148,8 +149,8 @@ def describeResources(conn,pool):
         res+=str(resource[r])+","
     return res[:-1]
 
-HOST = ''                 # Symbolic name meaning all available interfaces
-PORT = 9000               # Arbitrary non-privileged port
+HOST = ''
+PORT = 9002
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
@@ -170,8 +171,24 @@ while 1:
 
     instr = data.split(",")
 
-    if(instr[0] == "desc"):
+    if instr[0] == "desc":
+        connsock.send(describeResources(connvm, pool))
+    elif instr[0] == "creat":
+        domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])
+        connsock.send(str(domID))
+    elif instr[0] == "dest":
+        domID = int(instr[1])
+        removeVM(connvm, pool, domID)
+        connsock.send("success")
+    elif instr[0] == "shut":
+        domID = int(instr[1])
+        shutdownVM(connvm, domID)
+        connsock.send("success")
+    elif instr[0] == "start":
+        domID = int(instr[1])
+        startVM(connvm, domID)
+        connsock.send("success")
 
+    connsock.close()
 
-connsock.close()
-
+connvm.close()
