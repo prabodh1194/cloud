@@ -18,7 +18,7 @@ while 1:
     he = data.split("\r\n")
     he = he[0].split(" ")
     print he
-    
+
     if he[0] == "GET":
         if he[1] == "/":
             continue
@@ -34,7 +34,7 @@ while 1:
             else:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(("node"+str(req[1]*2), 9001))
-                s.send("desc,"+req[1]+(","+req[2] if len(req)==3 else ""))
+                s.send("desc"+(","+req[2] if len(req)==3 else ""))
                 conn.send(s.recv(1024))
                 s.close()
 
