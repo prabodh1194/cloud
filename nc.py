@@ -118,9 +118,9 @@ def startVM(conn, domID):
 
 def describeResources(conn,pool):
     resource = {}
-    resource["capacity"] = pool.info()[1]
     resource["vcpu"] = conn.getMaxVcpus(None)
     resource["memory"] = (conn.getInfo()[1])*1024*1024
+    resource["capacity"] = pool.info()[1]
 
     print resource
 
@@ -140,9 +140,9 @@ def describeResources(conn,pool):
         cpu += dom.maxVcpus()
         hdd += vol[1]
 
-    resource["capacity"] -= hdd
     resource["vcpu"] -= cpu
     resource["memory"] -= mem
+    resource["capacity"] -= hdd
 
     res = ""
 

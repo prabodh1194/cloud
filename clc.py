@@ -40,11 +40,11 @@ while 1:
                 conn.send(s.recv(1024))
                 s.close()
 
-        elif req[0] == "create":
-            #/create/zone/name/cpu/memory/disk
+        elif "create" in req[0]:
+            #/create(s)/zone/name/cpu/memory/disk
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(("node"+str(int(req[1])*2), 9001))
-            s.send("create,"+req[2]+","+req[3]+","+req[4]+","+req[5])
+            s.send(req[0]+","+req[2]+","+req[3]+","+req[4]+","+req[5])
             domID = s.recv(1024)
             print domID
 
