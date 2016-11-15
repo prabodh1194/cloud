@@ -1,4 +1,4 @@
-import socket, sys
+import socket, sys, ast, pdb
 
 ccID = int(sys.argv[1])
 HOST = ''
@@ -34,15 +34,15 @@ while 1:
             res2 = s.recv(1024)
             s.close()
 
-            res1 = res1.split(",")
-            res2 = res2.split(",")
+            res1 = ast.literal_eval(res1)
+            res2 = ast.literal_eval(res2)
 
-            res = ""
+            res = {}
 
-            for i in range(0,len(res1)):
-                res += str(int(res1[i])+int(res2[i]))
+            for i in res1:
+                res[i] = int(res1[i])+int(res2[i])
 
-            conn.send(res)
+            conn.send(str(res))
 
         if len(request) == 2:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -58,15 +58,18 @@ while 1:
 
             s.send("desc")
             res = s.recv(1024)
-            res = res.split(",")
+            res = ast.literal_eval(res)
+
+            req_param = {'vcpu':request[2], 'memory':request[3], 'capacity': 1024*1024*1024*int(request[4])}
+            print res, req_param
 
             flag = 1
 
-            for i in range(0,len(res)):
-                flag &= int(res[i]) >= int(request[i+1])
+            for i in res:
+                flag &= int(res[i]) >= int(req_param[i])
 
+            s.close()
             if not flag:
-                s.close()
                 state ^= 1
             else:
                 break
@@ -75,14 +78,18 @@ while 1:
             conn.send("fail")
             break
 
+        print "node"+str(ccID*2+state), data
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("node"+str(ccID*2+state), 9002))
         s.send(data)
-        domID = int(s.recv(10))
+        domID,port = s.recv(1024).split(",")
+        domID = int(domID)
+        port = int(port)
 
         if(domID != -1):
             vm[request[1]] = [domID, ccID*2+state]
 
-        conn.send("node"+str(ccID*2+state)+","+str(domID))
+        conn.send("node"+str(ccID*2+state)+","+str(domID)+","+str(port))
         s.close()
         state ^= 1
 
@@ -91,18 +98,18 @@ while 1:
         s.connect(("node"+str(ccID*2), 9002))
         s.send("desc")
         res1 = s.recv(1024)
-        res1 = res1.split(",")
+        res1 = ast.literal_eval(res1)
         s.close()
 
         s.connect(("node"+str(ccID*2+1), 9002))
         s.send("desc")
         res2 = s.recv(1024)
-        res2.split(",")
+        res2 = ast.literal_eval(res2)
         s.close()
 
         flag = 1
 
-        for i in range(len(res1)):
+        for i in res1:
             flag &= int(res1[i]) < int(res2[i])
 
         s.connect(("node"+str(ccID*2+flag), 9002))

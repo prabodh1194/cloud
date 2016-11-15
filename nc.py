@@ -96,7 +96,10 @@ def createVM(conn, pool, name, cpu, memory, size):
     domain=conn.defineXML(xml)
     domain.create()
     domain.setAutostart(1)
-    return domain.ID()
+    vnc_port = domain.XMLDesc().index("port")
+    vnc_port += 6
+    vnc_port_end = domain.XMLDesc().index("'", vnc_port)
+    return str(domain.ID())+","+domain.XMLDesc()[vnc_port:vnc_port_end]
 
 def removeVM(conn, pool, domID):
     domain = conn.lookupByID(domID)
@@ -148,7 +151,7 @@ def describeResources(conn,pool):
 
     for r in resource:
         res+=str(resource[r])+","
-    return res[:-1]
+    return str(resource)
 
 HOST = ''
 PORT = 9002
@@ -169,6 +172,7 @@ print describeResources(connvm, pool)
 while 1:
     connsock, addr = s.accept()
     data = connsock.recv(1024)
+    print data
     if data is None:
         continue
 
@@ -178,7 +182,8 @@ while 1:
         connsock.send(describeResources(connvm, pool))
     elif instr[0] == "create":
         domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])
-        connsock.send(str(domID))
+        print domID
+        connsock.send(domID)
     elif instr[0] == "remove":
         domID = int(instr[1])
         removeVM(connvm, pool, domID)
