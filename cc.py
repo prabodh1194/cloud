@@ -29,6 +29,7 @@ while 1:
             res1 = s.recv(1024)
             s.close()
 
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(("node"+str(ccID*2+1), 9002))
             s.send("desc")
             res2 = s.recv(1024)
@@ -95,12 +96,14 @@ while 1:
 
     #greedy
     elif request[0] == "creates":
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("node"+str(ccID*2), 9002))
         s.send("desc")
         res1 = s.recv(1024)
         res1 = ast.literal_eval(res1)
         s.close()
 
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("node"+str(ccID*2+1), 9002))
         s.send("desc")
         res2 = s.recv(1024)
@@ -112,14 +115,19 @@ while 1:
         for i in res1:
             flag &= int(res1[i]) < int(res2[i])
 
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("node"+str(ccID*2+flag), 9002))
         s.send(data)
-        domID = int(s.recv(10))
+        dd = s.recv(1024)
+        print dd
+        domID,port = dd.split(",")
+        domID = int(domID)
+        port = int(port)
 
         if(domID != -1):
             vm[request[1]] = [domID, ccID*2+state]
 
-        conn.send("node"+str(ccID*2+state)+","+str(domID))
+        conn.send("node"+str(ccID*2+state)+","+str(domID)+","+str(port))
         s.close()
 
     elif request[0] == "remove":

@@ -178,7 +178,7 @@ while 1:
 
     if instr[0] == "desc":
         connsock.send(describeResources(connvm, pool))
-    elif instr[0] == "create":
+    elif "create" in instr[0]:
         domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])
         print domID
         connsock.send(domID)
