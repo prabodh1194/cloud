@@ -127,7 +127,7 @@ while 1:
         if(domID != -1):
             vm[request[1]] = [domID, ccID*2+state]
 
-        conn.send("node"+str(ccID*2+state)+","+str(domID)+","+str(port))
+        conn.send("node"+str(ccID*2+flag)+","+str(domID)+","+str(port))
         s.close()
 
     elif request[0] == "remove":

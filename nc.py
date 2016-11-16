@@ -87,7 +87,7 @@ def createVM(conn, pool, name, cpu, memory, size):
                     <interface type='network'>\
                         <source network='default'/>\
                     </interface>\
-                    <graphics type='vnc'/>\
+                    <graphics type='vnc' listen='0.0.0.0'/>\
                 </devices>\
             </domain>\
             "

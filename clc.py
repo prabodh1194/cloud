@@ -10,7 +10,6 @@ vm = {}
 
 while 1:
     conn, addr = clcs.accept()
-    print addr
     data = conn.recv(1024)
     print vm
     if not data:
