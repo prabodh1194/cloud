@@ -131,7 +131,7 @@ def describeResources(conn,pool):
     hdd = 0
     cpu = 0
 
-    domains = conn.listAllDomains(0)
+    domains = conn.listAllDomains(libvirt.VIR_CONNECT_LIST_DOMAINS_RUNNING)
     for dom in domains:
 
         vol = pool.storageVolLookupByName(dom.name()+".qcow2")
@@ -166,8 +166,6 @@ connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
 #createVM(connvm, pool, name, cpu, memory, "10")
-
-print describeResources(connvm, pool)
 
 while 1:
     connsock, addr = s.accept()
