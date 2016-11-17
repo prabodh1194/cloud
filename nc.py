@@ -134,8 +134,12 @@ def describeResources(conn,pool):
     domains = conn.listAllDomains(libvirt.VIR_CONNECT_LIST_DOMAINS_RUNNING)
     for dom in domains:
 
-        vol = pool.storageVolLookupByName(dom.name()+".qcow2")
-        vol = vol.info()
+        vol = 0
+        try:
+            vol = pool.storageVolLookupByName(dom.name()+".qcow2")
+            vol = vol.info()
+        except:
+            continue
 
         print dom.name(), dom.maxMemory()
 

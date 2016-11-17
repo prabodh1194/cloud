@@ -1,4 +1,58 @@
-import socket, sys, ast, pdb
+from threading import Event, Thread
+import socket, sys, ast, signal
+
+t = None
+
+def handler(signum, frame):
+    ccs.close()
+    cancel()
+
+def packer():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("node"+str(ccID*2), 9002))
+    s.send("desc")
+    res1 = s.recv(1024)
+    res1 = ast.literal_eval(res1)
+    s.close()
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("node"+str(ccID*2+1), 9002))
+    s.send("desc")
+    res2 = s.recv(1024)
+    res2 = ast.literal_eval(res2)
+    s.close()
+
+    flag = 1
+
+    for i in res1:
+        flag &= int(res1[i]) < int(res2[i])
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("node"+str(ccID*2+flag), 9002))
+    s.send(data)
+    dd = s.recv(1024)
+    print dd
+    domID,port = dd.split(",")
+    domID = int(domID)
+    port = int(port)
+
+    if(domID != -1):
+        vm[request[1]] = [domID, ccID*2+state]
+
+    conn.send("node"+str(ccID*2+flag)+","+str(domID)+","+str(port))
+    s.close()
+
+def call_repeatedly(interval, func, *args):
+    stopped = Event()
+    def loop():
+        while not stopped.wait(interval): # the first call is in `interval` secs
+            func(*args)
+    Thread(target=loop).start()
+    return stopped.set
+
+signal.signal(signal.SIGINT, handler)
+
+#cancel = call_repeatedly(5, packer)
 
 ccID = int(sys.argv[1])
 HOST = ''
@@ -161,7 +215,3 @@ while 1:
 
     conn.close()
 ccs.close()
-
-def handler(signum, frame):
-    ccs.close()
-signal.signal(signal.SIGINT, handler)
