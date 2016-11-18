@@ -1,38 +1,6 @@
 import libvirt, socket
 from xml.dom import minidom
 
-def getVolume(conn, domID):
-    dom = conn.lookupByID(domID)
-    raw_xml = dom.XMLDesc(0)
-    xml = minidom.parseString(raw_xml)
-    diskTypes = xml.getElementsByTagName('disk')
-    for diskType in diskTypes:
-        nam = ""
-        typ = ""
-        fil = ""
-
-        if diskType.getAttribute('device') != 'disk':
-            continue
-        diskNodes = diskType.childNodes
-        for diskNode in diskNodes:
-            if fil is not "":
-                print fil
-                break
-            attrs = diskNode.attributes
-            if attrs is not None:
-                for attr in attrs.keys():
-                    name = str(diskNode.attributes[attr].name)
-                    val = str(diskNode.attributes[attr].value)
-                    if diskNode.nodeName == 'driver':
-                        if name == 'name' and val == 'qemu':
-                            nam = val
-                        elif name == 'type' and val == 'qcow2':
-                            typ = val
-                    elif diskNode.nodeName == 'source':
-                        if name == 'file' and typ is not "" and nam is not "":
-                            fil = val
-                            break
-
 def createStoragePoolVolume(pool, name, size):
     stpVolXml = """
     <volume>
@@ -68,12 +36,10 @@ def createVM(conn, pool, name, cpu, memory, size):
                 </os>\
                 <devices>\
                     <disk type='file' device='disk'>\
-                        <driver name='qemu' type='qcow2'/>\
+                        <driver name='qemu' type='qcow2' cache='none'/>\
                         <source file='/var/lib/libvirt/images/"+name+".qcow2'/>\
                         <backingStore/>\
                         <target dev='vda' bus='virtio'/>\
-                        <alias name='virtio-disk0'/>\
-                        <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>\
                     </disk>\
                     <disk type='file' device='cdrom'>\
                         <driver name='qemu' type='raw'/>\
@@ -81,8 +47,6 @@ def createVM(conn, pool, name, cpu, memory, size):
                         <backingStore/>\
                         <target dev='hda' bus='ide'/>\
                         <readonly/>\
-                        <alias name='ide0-0-0'/>\
-                        <address type='drive' controller='0' bus='0' target='0' unit='0'/>\
                     </disk>\
                     <interface type='network'>\
                         <source network='default'/>\
@@ -118,6 +82,18 @@ def shutdownVM(conn, domID):
 def startVM(conn, domID):
     domain = conn.lookupByID(domID)
     domain.create()
+
+def attachDisk(conn, domID, disk, vol):
+    disk = """
+    <disk type='file' device='disk'>
+        <driver name='qemu' type='qcow2' cache='none'/>
+        <source file='/var/lib/libvirt/images/"""+disk+""".qcow2'/>
+        <backingStore/>
+        <target dev='"""+vol+"""' bus='virtio'/>
+    </disk>
+    """
+    domain = conn.lookupByID(domID)
+    domain.attachDeviceFlags(disk, libvirt.VIR_DOMAIN_AFFECT_CONFIG)
 
 def describeResources(conn,pool):
     resource = {}
@@ -197,6 +173,10 @@ while 1:
     elif instr[0] == "start":
         domID = int(instr[1])
         startVM(connvm, domID)
+        connsock.send("1")
+    elif instr[0] == "attachDisk":
+        domID = int(instr[1])
+        attachDisk(connvm, domID, instr[2], instr[3])
         connsock.send("1")
 
     connsock.close()

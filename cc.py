@@ -50,19 +50,44 @@ def call_repeatedly(interval, func, *args):
     Thread(target=loop).start()
     return stopped.set
 
+def createStoragePoolVolume(pool, name, size):
+    stpVolXml = """
+    <volume>
+        <name>"""+name+""".qcow2</name>
+        <allocation>0</allocation>
+        <capacity unit="G">"""+size+"""</capacity>
+        <target>
+            <format type='qcow2'/>
+            <path>/var/lib/libvirt/images/"""+name+""".qcow2</path>
+            <permissions>
+                <owner>107</owner>
+                <group>107</group>
+                <mode>0744</mode>
+                <label>virt_image_t</label>
+            </permissions>
+        </target>
+    </volume>
+    """
+    stpVol = pool.createXML(stpVolXml, 0)
+    return stpVol
+
 signal.signal(signal.SIGINT, handler)
+connvm = libvirt.open("qemu:///system")
+pool = connvm.storagePoolLookupByName('images')
 
 #cancel = call_repeatedly(5, packer)
 
 ccID = int(sys.argv[1])
 HOST = ''
 PORT = 9001
-ccs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ccs.bind((HOST, PORT))
-ccs.listen(1)
 
 vm = {}
 state = 0
+disk = 0
+
+ccs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ccs.bind((HOST, PORT))
+ccs.listen(1)
 
 while 1:
     conn, addr = ccs.accept()
@@ -197,21 +222,32 @@ while 1:
         s.close()
 
     elif request[0] == "shut":
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(vm[request[1]][1]), 9002))
-            s.send("shut,"+str(vm[request[1]][0]))
-            success = int(s.recv(10))
-            print success
-            conn.send(str(vm[request[1]][0]))
-            s.close()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("node"+str(vm[request[1]][1]), 9002))
+        s.send("shut,"+str(vm[request[1]][0]))
+        success = int(s.recv(10))
+        print success
+        conn.send(str(vm[request[1]][0]))
+        s.close()
 
     elif request[0] == "resume":
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(vm[request[1]][1]), 9002))
-            s.send("shut,"+str(vm[request[1]][0]))
-            success = int(s.recv(10))
-            conn.send(str(vm[request[1]][0]))
-            s.close()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("node"+str(vm[request[1]][1]), 9002))
+        s.send("shut,"+str(vm[request[1]][0]))
+        success = int(s.recv(10))
+        conn.send(str(vm[request[1]][0]))
+        s.close()
+
+    elif request[0] == "addDisk":
+        createStoragePoolVolume(pool, "disk"+str(disk), request[1])
+        disk += 1
+        conn.send("disk"+str(disk-1))
+
+    elif request[0] == "attachDisk":
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("node"+str(vm[request[1]][1]), 9002))
+        s.send("attach,"+str(vm[request[1]][0])+","+request[2]+","+request[3])
+        s.close()
 
     conn.close()
 ccs.close()

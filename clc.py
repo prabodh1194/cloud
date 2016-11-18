@@ -84,12 +84,28 @@ while 1:
             #/start/zone/name
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(("node"+str(int(req[1])*2), 9001))
-            s.send("start,"+req[2])
+            s.send("resume,"+req[2])
             domID = s.recv(1024)
             for a in vm[int(req[1])]:
                 if a[0] == domID:
                     a[2] = 'a'
             conn.send(str(vm))
+            s.close()
+
+        elif req[0] == "addDisk":
+            #/addDisk/zone/size
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+str(int(req[1])*2), 9001))
+            s.send("addDisk,"+req[2])
+            diskName = s.recv(1024)
+            conn.send(diskName+":"+req[2]+"G")
+            s.close()
+
+        elif req[0] == "attachDisk":
+            #/attachDisk/zone/vmname/diskname/volname
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+str(int(req[1])*2), 9001))
+            s.send("attachDisk,"+req[2]+","+req[3]+","+req[4])
             s.close()
 
     conn.close()
