@@ -108,6 +108,50 @@ while 1:
             s.send("attachDisk,"+req[2]+","+req[3]+","+req[4])
             s.close()
 
+        elif req[0] == "put":
+            #/put/file
+            file = req[1]
+            hash = 0
+
+            for f in file:
+                hash ^= (ord(f)&1)
+
+            hash <<= 2
+            hash = str(hash)
+            print "node"+hash
+            ip = socket.gethostbyname("node"+hash)
+            conn.send("curl "+ip+":9001 --upload-file "+file)
+
+        elif req[0] == "get":
+            #/get/file
+            file = req[1]
+            hash = 0
+
+            for f in file:
+                hash ^= (ord(f)&1)
+
+            hash <<= 2
+            hash = str(hash)
+            print "node"+hash
+            ip = socket.gethostbyname("node"+hash)
+            conn.send("curl "+ip+":9001/"+file+" --output "+file)
+
+        elif req[0] == "delete":
+            #/delete/file
+            file = req[1]
+            hash = 0
+
+            for f in file:
+                hash ^= (ord(f)&1)
+
+            hash <<= 2
+            hash = str(hash)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+hash, 9001))
+            s.send("deleteObject,"+req[1])
+            conn.send(s.recv)
+            s.close()
+
     conn.close()
 clcs.close()
 

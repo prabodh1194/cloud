@@ -1,5 +1,5 @@
 from threading import Event, Thread
-import socket, sys, ast, signal
+import libvirt, socket, sys, ast, signal
 
 t = None
 
@@ -27,19 +27,19 @@ def packer():
     for i in res1:
         flag &= int(res1[i]) < int(res2[i])
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("node"+str(ccID*2+flag), 9002))
-    s.send(data)
-    dd = s.recv(1024)
-    print dd
-    domID,port = dd.split(",")
-    domID = int(domID)
-    port = int(port)
+    src = ~flag+ccID*2 #migrate from
+    tar = flag+ccID*2 #migrate to
 
-    if(domID != -1):
-        vm[request[1]] = [domID, ccID*2+state]
+    for name, domain in vm:
+        if domain[2] == src:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(("node"+str(src), 9002))
+            s.send("desc")
+            res = s.recv(1024)
+            res = ast.literal_eval(res)
+            s.close()
 
-    conn.send("node"+str(ccID*2+flag)+","+str(domID)+","+str(port))
+    domain.migrate(dest, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node1", 0)
     s.close()
 
 def call_repeatedly(interval, func, *args):
@@ -80,6 +80,7 @@ pool = connvm.storagePoolLookupByName('images')
 ccID = int(sys.argv[1])
 HOST = ''
 PORT = 9001
+objectStorePath = "/home/group1/osd/"
 
 vm = {}
 state = 0
@@ -96,6 +97,38 @@ while 1:
 
     if not data:
         continue
+
+    if "PUT" in data:
+        head = data.split("\n")[0]
+        length = data.split("\n")[4]
+        length = int(length.split(" ")[1])
+        file = head.split(" ")[1][1:]
+        file = open(objectStorePath+file, "w")
+        while length > 0:
+            dat = conn.recv(1024)
+            length -= len(dat)
+            file.write(dat)
+            if dat == None:
+                print "donw"
+                conn.send("200")
+                conn.close()
+                file.close()
+                break
+
+    if "GET" in data:
+        head = data.split("\n")[0]
+        file = head.split(" ")[1][1:]
+
+        try:
+            file = open(objectStorePath+file, "r")
+        except:
+            conn.close()
+            continue
+
+        for line in file:
+            conn.send(line)
+        conn.close()
+        file.close()
 
     request = data.split(",")
     print request
@@ -248,6 +281,13 @@ while 1:
         s.connect(("node"+str(vm[request[1]][1]), 9002))
         s.send("attach,"+str(vm[request[1]][0])+","+request[2]+","+request[3])
         s.close()
+
+    elif request[0] == "deleteObject":
+        try:
+            os.remove(request[1])
+            conn.send("Success")
+        except:
+            conn.send("File not exists")
 
     conn.close()
 ccs.close()
