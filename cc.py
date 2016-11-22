@@ -27,20 +27,39 @@ def packer():
     for i in res1:
         flag &= int(res1[i]) < int(res2[i])
 
+    if flag:
+        res1 = res2
+
     src = ~flag+ccID*2 #migrate from
     tar = flag+ccID*2 #migrate to
 
+    srcConn = libvirt.open("qemu+tcp://node"+str(src)+"/system")
+    tarConn = libvirt.open("qemu+tcp://node"+str(tar)+"/system")
+
     for name, domain in vm:
-        if domain[2] == src:
+        if domain[1] == src:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(("node"+str(src), 9002))
             s.send("desc")
             res = s.recv(1024)
             res = ast.literal_eval(res)
+
+            flag = 1
+
+            for i in res1:
+                flag &= int(res[i]) < int(res1[i])
+
+            if flag:
+                dom = srcConn.lookupByID(domain[0])
+                dom.migrate(tarConn, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(tar), 0)
+
+                for i in res1:
+                    res1[i] = res1[i] - res[i]
+
             s.close()
 
-    domain.migrate(dest, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node1", 0)
-    s.close()
+    srcConn.close()
+    tarConn.close()
 
 def call_repeatedly(interval, func, *args):
     stopped = Event()
@@ -75,7 +94,7 @@ signal.signal(signal.SIGINT, handler)
 connvm = libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-#cancel = call_repeatedly(5, packer)
+cancel = call_repeatedly(5, packer)
 
 ccID = int(sys.argv[1])
 HOST = ''
