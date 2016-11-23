@@ -161,7 +161,7 @@ while 1:
         if len(instr) == 2:
             dom = connvm.lookupByName(instr[1])
             vol = pool.storageVolLookupByName(dom.name()+".qcow2").info()[1]
-            vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol[1]}
+            vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol}
             connsock.send(str(vm))
             continue
         connsock.send(describeResources(connvm, pool))
