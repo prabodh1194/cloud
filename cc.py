@@ -8,6 +8,7 @@ def handler(signum, frame):
     cancel()
 
 def packer():
+    print "Trying pack"
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(("node"+str(ccID*2), 9002))
     s.send("desc")
@@ -22,13 +23,10 @@ def packer():
     res2 = ast.literal_eval(res2)
     s.close()
 
-    flag = 1
+    conn1 = libvirt.open("qemu+tcp://node"+str(ccID*2)+"/system")
+    conn2 = libvirt.open("qemu+tcp://node"+str(ccID*2+1)+"/system")
 
-    for i in res1:
-        flag &= int(res1[i]) < int(res2[i])
-
-    conn1 = libvirt.open("qemu+tcp://node"+str(src)+"/system")
-    conn2 = libvirt.open("qemu+tcp://node"+str(tar)+"/system")
+    print res1, res2
 
     for k, v in vm:
 

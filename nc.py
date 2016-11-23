@@ -1,6 +1,9 @@
 import libvirt, socket
 from xml.dom import minidom
 
+def handler(signum, frame):
+    connvm.close()
+
 def createStoragePoolVolume(pool, name, size):
     stpVolXml = """
     <volume>
@@ -139,10 +142,11 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
 
+signal.signal(signal.SIGINT, handler)
 connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-#createVM(connvm, pool, name, cpu, memory, "10")
+#createVM(connvm, pool, "centi", "2", "1111111111", "10")
 
 while 1:
     connsock, addr = s.accept()
@@ -185,7 +189,3 @@ while 1:
     connsock.close()
 
 connvm.close()
-
-def handler(signum, frame):
-    connvm.close()
-signal.signal(signal.SIGINT, handler)
