@@ -1,4 +1,4 @@
-import libvirt, socket
+import libvirt, socket, signal
 from xml.dom import minidom
 
 def handler(signum, frame):
@@ -159,7 +159,7 @@ while 1:
 
     if instr[0] == "desc":
         if len(instr) == 2:
-            dom = conn.lookupByName(instr[1])
+            dom = connvm.lookupByName(instr[1])
             vol = pool.storageVolLookupByName(dom.name()+".qcow2").info()[1]
             vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol[1]}
             connsock.send(str(vm))

@@ -28,11 +28,13 @@ def packer():
 
     print res1, res2
 
-    for k, v in vm:
+    for k in vm:
+
+        v = vm[k]
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(("node"+str(src), 9002))
-        s.send("desc,"+str(v[0]))
+        s.connect(("node"+str(v[1]), 9002))
+        s.send("desc,"+k)
         res = s.recv(1024)
         res = ast.literal_eval(res)
         s.close()
@@ -96,7 +98,7 @@ signal.signal(signal.SIGINT, handler)
 connvm = libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-cancel = call_repeatedly(5, packer)
+cancel = call_repeatedly(20, packer)
 
 ccID = int(sys.argv[1])
 HOST = ''
@@ -258,7 +260,7 @@ while 1:
         port = int(port)
 
         if(domID != -1):
-            vm[request[1]] = [domID, ccID*2+state]
+            vm[request[1]] = [domID, ccID*2+flag]
 
         conn.send("node"+str(ccID*2+flag)+","+str(domID)+","+str(port))
         s.close()
