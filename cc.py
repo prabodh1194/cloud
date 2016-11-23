@@ -45,27 +45,33 @@ def packer():
         flag = 1
         if v[1]&1 == 0: #migrate from 1 to 2
             for i in res1:
-                flag &= (int(res2[i])-int(res[i])) < (int(res1[i])+int(res[i]))
+                #resources remaining in 2 after migration from 1 should not be lesser
+                if i == "capacity":
+                    continue
+                flag &= (int(res2[i])-int(res[i])) > (int(res1[i])+int(res[i]))
                 print flag, i
             if flag:
                 dom = conn1.lookupByID(v[0])
-                dom.migrate(conn2, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]+1), 0)
-
-                for i in res:
-                    res1[i] -= res[i]
-                    res2[i] += res[i]
-
-        else:
-            for i in res1: #migrate from 2 to 1
-                flag &= (int(res1[i])-int(res[i])) < (int(res2[i])+int(res[i]))
-                print flag, i
-            if flag:
-                dom = conn2.lookupByID(domain[0])
-                dom.migrate(conn1, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]-1), 0)
-
+                dom = dom.migrate(conn2, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]+1), 0)
+                v[0] = dom.ID()
                 for i in res:
                     res1[i] += res[i]
                     res2[i] -= res[i]
+
+        else:
+            for i in res1: #migrate from 2 to 1
+                #resources remaining in 1 after migration from 2 should not be lesser
+                if i == "capacity":
+                    continue
+                flag &= (int(res1[i])-int(res[i])) > (int(res2[i])+int(res[i]))
+                print flag, i
+            if flag:
+                dom = conn2.lookupByID(v[0])
+                dom = dom.migrate(conn1, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]-1), 0)
+                v[0] = dom.ID()
+                for i in res:
+                    res1[i] -= res[i]
+                    res2[i] += res[i]
 
     conn1.close()
     conn2.close()
