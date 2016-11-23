@@ -139,9 +139,6 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
 
-memory = "1073741824"
-cpu = "2"
-name = "centos71"
 connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
@@ -157,6 +154,12 @@ while 1:
     instr = data.split(",")
 
     if instr[0] == "desc":
+        if len(instr) == 2:
+            dom = conn.lookupByName(instr[1])
+            vol = pool.storageVolLookupByName(dom.name()+".qcow2").info()[1]
+            vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol[1]}
+            connsock.send(str(vm))
+            continue
         connsock.send(describeResources(connvm, pool))
     elif "create" in instr[0]:
         domID = createVM(connvm, pool, instr[1], instr[2], instr[3], instr[4])

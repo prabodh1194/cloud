@@ -27,39 +27,43 @@ def packer():
     for i in res1:
         flag &= int(res1[i]) < int(res2[i])
 
-    if flag:
-        res1 = res2
+    conn1 = libvirt.open("qemu+tcp://node"+str(src)+"/system")
+    conn2 = libvirt.open("qemu+tcp://node"+str(tar)+"/system")
 
-    src = ~flag+ccID*2 #migrate from
-    tar = flag+ccID*2 #migrate to
+    for k, v in vm:
 
-    srcConn = libvirt.open("qemu+tcp://node"+str(src)+"/system")
-    tarConn = libvirt.open("qemu+tcp://node"+str(tar)+"/system")
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("node"+str(src), 9002))
+        s.send("desc,"+str(v[0]))
+        res = s.recv(1024)
+        res = ast.literal_eval(res)
+        s.close()
 
-    for name, domain in vm:
-        if domain[1] == src:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(("node"+str(src), 9002))
-            s.send("desc")
-            res = s.recv(1024)
-            res = ast.literal_eval(res)
-
-            flag = 1
-
+        flag = 1
+        if v[1]&1 == 0: #migrate from 1 to 2
             for i in res1:
-                flag &= int(res[i]) < int(res1[i])
-
+                flag &= (int(res2[i])+int(res[i])) < (int(res1[i])-int(res[i]))
             if flag:
-                dom = srcConn.lookupByID(domain[0])
-                dom.migrate(tarConn, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(tar), 0)
+                dom = conn1.lookupByID(v[0])
+                dom.migrate(conn2, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]+1), 0)
 
-                for i in res1:
-                    res1[i] = res1[i] - res[i]
+                for i in res:
+                    res1[i] -= res[i]
+                    res2[i] += res[i]
 
-            s.close()
+        else:
+            for i in res1: #migrate from 2 to 1
+                flag &= (int(res1[i])+int(res[i])) < (int(res2[i])-int(res[i]))
+            if flag:
+                dom = conn2.lookupByID(domain[0])
+                dom.migrate(conn1, libvirt.VIR_MIGRATE_LIVE, None, "tcp://node"+str(v[1]-1), 0)
 
-    srcConn.close()
-    tarConn.close()
+                for i in res:
+                    res1[i] += res[i]
+                    res2[i] -= res[i]
+
+    conn1.close()
+    conn2.close()
 
 def call_repeatedly(interval, func, *args):
     stopped = Event()
