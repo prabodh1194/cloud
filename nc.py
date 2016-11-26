@@ -53,6 +53,7 @@ def createVM(conn, pool, name, cpu, memory, size):
                     </disk>\
                     <interface type='network'>\
                         <source network='default'/>\
+                        <model type='virtio'/>\
                     </interface>\
                     <graphics type='vnc' listen='0.0.0.0'/>\
                 </devices>\
@@ -146,7 +147,7 @@ signal.signal(signal.SIGINT, handler)
 connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-#createVM(connvm, pool, "centi", "2", "1111111111", "10")
+createVM(connvm, pool, "centi", "2", "1111111111", "10")
 
 while 1:
     connsock, addr = s.accept()
