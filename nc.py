@@ -53,6 +53,7 @@ def createVM(conn, pool, name, cpu, memory, size):
                     </disk>\
                     <interface type='network'>\
                         <source network='default'/>\
+                        <model type='virtio'/>\
                     </interface>\
                     <graphics type='vnc' listen='0.0.0.0'/>\
                 </devices>\
