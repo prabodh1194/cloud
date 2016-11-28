@@ -1,5 +1,8 @@
-import libvirt, socket
+import libvirt, socket, signal
 from xml.dom import minidom
+
+def handler(signum, frame):
+    connvm.close()
 
 def createStoragePoolVolume(pool, name, size):
     stpVolXml = """
@@ -50,6 +53,7 @@ def createVM(conn, pool, name, cpu, memory, size):
                     </disk>\
                     <interface type='network'>\
                         <source network='default'/>\
+                        <model type='virtio'/>\
                     </interface>\
                     <graphics type='vnc' listen='0.0.0.0'/>\
                 </devices>\
@@ -139,10 +143,11 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(1)
 
+signal.signal(signal.SIGINT, handler)
 connvm =libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-#createVM(connvm, pool, name, cpu, memory, "10")
+#createVM(connvm, pool, "centi", "2", "1111111111", "10")
 
 while 1:
     connsock, addr = s.accept()
@@ -155,9 +160,9 @@ while 1:
 
     if instr[0] == "desc":
         if len(instr) == 2:
-            dom = conn.lookupByName(instr[1])
+            dom = connvm.lookupByName(instr[1])
             vol = pool.storageVolLookupByName(dom.name()+".qcow2").info()[1]
-            vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol[1]}
+            vm = {"vcpu":dom.maxVcpus(), "memory":dom.maxMemory()*1024, "capacity":vol}
             connsock.send(str(vm))
             continue
         connsock.send(describeResources(connvm, pool))
@@ -185,7 +190,3 @@ while 1:
     connsock.close()
 
 connvm.close()
-
-def handler(signum, frame):
-    connvm.close()
-signal.signal(signal.SIGINT, handler)
