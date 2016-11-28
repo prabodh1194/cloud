@@ -1,4 +1,4 @@
-import socket, signal
+import socket, signal, ast
 
 HOST = ''
 PORT = 9000
@@ -13,7 +13,7 @@ vm['1'] = []
 
 for i in range(0,2):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("node"+str(ccID*2+i), 9001))
+    s.connect(("node"+str(i*2), 9001))
     s.send("info")
     info = s.recv(1024)
     info = ast.literal_eval(info)

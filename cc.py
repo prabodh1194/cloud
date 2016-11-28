@@ -127,14 +127,16 @@ ccs.listen(1)
 #startup
 doms = connvm.listDomainsID()
 
-for dom in doms:
+for d in doms:
+    dom = connvm.lookupByID(d)
     vm[dom.name()] = [dom.ID(),ccID*2]
 
-connvm = libvirt.open("qemu://node"+(ccID*2+1)+"/system")
+connvm = libvirt.open("qemu+tcp://node"+str(ccID*2+1)+"/system")
 
 doms = connvm.listDomainsID()
 
-for dom in doms:
+for d in doms:
+    dom = connvm.lookupByID(d)
     vm[dom.name()] = [dom.ID(),ccID*2+1]
 
 connvm = libvirt.open("qemu:///system")
