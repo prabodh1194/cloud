@@ -98,7 +98,7 @@ signal.signal(signal.SIGINT, handler)
 connvm = libvirt.open("qemu:///system")
 pool = connvm.storagePoolLookupByName('images')
 
-cancel = call_repeatedly(5, packer)
+cancel = call_repeatedly(120, packer)
 
 ccID = int(sys.argv[1])
 HOST = ''
@@ -112,6 +112,21 @@ disk = 0
 ccs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ccs.bind((HOST, PORT))
 ccs.listen(1)
+
+#startup
+doms = connvm.listDomainsID()
+
+for dom in doms:
+    vm[dom.name()] = [dom.ID(),ccID*2]
+
+connvm = libvirt.open("qemu://node"+(ccID*2+1)+"/system")
+
+doms = connvm.listDomainsID()
+
+for dom in doms:
+    vm[dom.name()] = [dom.ID(),ccID*2+1]
+
+connvm = libvirt.open("qemu:///system")
 
 while 1:
     conn, addr = ccs.accept()
@@ -311,6 +326,9 @@ while 1:
             conn.send("Success")
         except:
             conn.send("File not exists")
+
+    elif request[0] == "info":
+        conn.send(str(vm))
 
     conn.close()
 ccs.close()

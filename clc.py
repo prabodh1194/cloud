@@ -8,6 +8,20 @@ clcs.listen(1)
 
 vm = {}
 
+vm['0'] = []
+vm['1'] = []
+
+for i in range(0,2):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("node"+str(ccID*2+i), 9001))
+    s.send("info")
+    info = s.recv(1024)
+    info = ast.literal_eval(info)
+    s.close()
+
+    for dom in info:
+        vm[str(i)] += [[info[dom][0],dom,'a']]
+
 while 1:
     conn, addr = clcs.accept()
     data = conn.recv(1024)
